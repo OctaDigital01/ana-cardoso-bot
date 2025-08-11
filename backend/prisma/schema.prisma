@@ -1,0 +1,365 @@
+// Esquema do banco de dados PostgreSQL
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de usuário
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  plan      Plan     @default(FREE)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  bots         Bot[]
+  sessions     Session[]
+  payments     Payment[]
+  analytics    Analytics[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// Planos de usuário
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// Sessões de usuário (para JWT refresh)
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Modelo de bot
+model Bot {
+  id          String  @id @default(cuid())
+  userId      String
+  token       String  @unique // Token criptografado
+  username    String  @unique
+  firstName   String
+  name        String? // Nome personalizado pelo usuário
+  description String?
+  active      Boolean @default(false)
+  webhookUrl  String?
+  settings    Json    @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flows         Flow[]
+  messages      Message[]
+  conversations Conversation[]
+  analytics     Analytics[]
+  commands      Command[]
+
+  @@map("bots")
+}
+
+// Comandos do bot
+model Command {
+  id          String @id @default(cuid())
+  botId       String
+  command     String
+  description String
+  scope       CommandScope @default(DEFAULT)
+  active      Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  bot Bot @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@unique([botId, command])
+  @@map("commands")
+}
+
+enum CommandScope {
+  DEFAULT
+  ALL_PRIVATE_CHATS
+  ALL_GROUP_CHATS
+  ALL_CHAT_ADMINISTRATORS
+}
+
+// Fluxos de conversação
+model Flow {
+  id        String  @id @default(cuid())
+  botId     String
+  name      String
+  active    Boolean @default(false)
+  version   Int     @default(1)
+  nodes     Json    @default("[]")
+  edges     Json    @default("[]")
+  variables Json    @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  bot          Bot           @relation(fields: [botId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  conversations Conversation[]
+
+  @@map("flows")
+}
+
+// Mensagens/templates
+model Message {
+  id        String      @id @default(cuid())
+  flowId    String?
+  botId     String?
+  type      MessageType @default(TEXT)
+  content   String
+  parseMode String?     @default("HTML")
+  media     Json?
+  keyboard  Json?
+  variables Json        @default("[]")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relacionamentos
+  flow Flow? @relation(fields: [flowId], references: [id], onDelete: SetNull)
+  bot  Bot?  @relation(fields: [botId], references: [id], onDelete: SetNull)
+
+  @@map("messages")
+}
+
+enum MessageType {
+  TEXT
+  PHOTO
+  VIDEO
+  DOCUMENT
+  AUDIO
+  STICKER
+  ANIMATION
+  VOICE
+  VIDEO_NOTE
+}
+
+// Conversas dos usuários do Telegram
+model Conversation {
+  id              String   @id @default(cuid())
+  botId           String
+  flowId          String?
+  telegramUserId  String
+  telegramChatId  String
+  firstName       String?
+  lastName        String?
+  username        String?
+  languageCode    String?
+  state           Json     @default("{}")
+  currentNode     String?
+  startedAt       DateTime @default(now())
+  lastInteraction DateTime @default(now())
+  active          Boolean  @default(true)
+
+  // Relacionamentos
+  bot  Bot   @relation(fields: [botId], references: [id], onDelete: Cascade)
+  flow Flow? @relation(fields: [flowId], references: [id], onDelete: SetNull)
+  interactions Interaction[]
+
+  @@unique([botId, telegramUserId])
+  @@map("conversations")
+}
+
+// Interações nas conversas
+model Interaction {
+  id             String   @id @default(cuid())
+  conversationId String
+  type           InteractionType
+  content        String?
+  metadata       Json     @default("{}")
+  timestamp      DateTime @default(now())
+
+  // Relacionamentos
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("interactions")
+}
+
+enum InteractionType {
+  MESSAGE_RECEIVED
+  MESSAGE_SENT
+  BUTTON_CLICKED
+  PAYMENT_REQUESTED
+  PAYMENT_COMPLETED
+  FLOW_STARTED
+  FLOW_COMPLETED
+  ERROR_OCCURRED
+}
+
+// Pagamentos
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  externalId      String?       @unique
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("BRL")
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  description     String?
+  customerName    String?
+  customerEmail   String?
+  customerCpf     String?
+  pixCode         String?
+  qrCode          String?
+  boleto          String?
+  metadata        Json          @default("{}")
+  paidAt          DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refunds Refund[]
+
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+  BOLETO
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+// Reembolsos
+model Refund {
+  id        String      @id @default(cuid())
+  paymentId String
+  amount    Decimal     @db.Decimal(10, 2)
+  reason    String?
+  status    RefundStatus @default(PROCESSING)
+  processedAt DateTime?
+  createdAt DateTime    @default(now())
+
+  // Relacionamentos
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("refunds")
+}
+
+enum RefundStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// Analytics e métricas
+model Analytics {
+  id        String   @id @default(cuid())
+  userId    String
+  botId     String?
+  event     String
+  data      Json     @default("{}")
+  timestamp DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bot  Bot? @relation(fields: [botId], references: [id], onDelete: SetNull)
+
+  @@map("analytics")
+}
+
+// Notificações
+model Notification {
+  id        String             @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  content   String
+  read      Boolean            @default(false)
+  metadata  Json               @default("{}")
+  createdAt DateTime           @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  PAYMENT
+  BOT_STATUS
+  SYSTEM
+}
+
+// Jobs em background
+model Job {
+  id        String    @id @default(cuid())
+  type      String
+  data      Json      @default("{}")
+  status    JobStatus @default(PENDING)
+  attempts  Int       @default(0)
+  error     String?
+  result    Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("jobs")
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// Webhooks
+model Webhook {
+  id        String        @id @default(cuid())
+  url       String
+  events    String[]
+  secret    String?
+  active    Boolean       @default(true)
+  retries   Int           @default(3)
+  status    WebhookStatus @default(ACTIVE)
+  lastSent  DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("webhooks")
+}
+
+enum WebhookStatus {
+  ACTIVE
+  INACTIVE
+  FAILED
+}
