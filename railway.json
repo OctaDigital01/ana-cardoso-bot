@@ -1,50 +1,10 @@
 {
-  "projectName": "telegram-bot-manager",
-  "services": [
-    {
-      "name": "backend",
-      "source": {
-        "type": "github",
-        "repo": "OctaDigital01/Telegram-BOT",
-        "rootDirectory": "backend"
-      },
-      "build": {
-        "command": "npm run build",
-        "output": "dist"
-      },
-      "start": "node dist/server.js",
-      "env": {
-        "NODE_ENV": "production",
-        "PORT": "$PORT"
-      },
-      "port": 3333
-    },
-    {
-      "name": "frontend", 
-      "source": {
-        "type": "github",
-        "repo": "OctaDigital01/Telegram-BOT",
-        "rootDirectory": "frontend"
-      },
-      "build": {
-        "command": "npm run build"
-      },
-      "start": "npm start",
-      "env": {
-        "NODE_ENV": "production",
-        "PORT": "$PORT"
-      },
-      "port": 3000
-    }
-  ],
-  "databases": [
-    {
-      "name": "postgres",
-      "type": "postgresql"
-    },
-    {
-      "name": "redis", 
-      "type": "redis"
-    }
-  ]
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
 }
