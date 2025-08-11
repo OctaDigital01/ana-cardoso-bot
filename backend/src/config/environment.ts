@@ -85,6 +85,7 @@ export const config = {
   redisUrl: parseResult.data.REDIS_URL,
   
   // JWT
+  jwtSecret: parseResult.data.JWT_SECRET,
   jwt: {
     secret: parseResult.data.JWT_SECRET,
     refreshSecret: parseResult.data.JWT_REFRESH_SECRET,
