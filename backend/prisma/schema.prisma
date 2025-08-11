@@ -10,15 +10,21 @@ datasource db {
 
 // Modelo de usuário
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  avatar    String?
-  plan      Plan     @default(FREE)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  password              String
+  name                  String
+  avatar                String?
+  plan                  Plan     @default(FREE)
+  active                Boolean  @default(false)
+  emailVerified         Boolean  @default(false)
+  emailVerificationToken String?
+  passwordResetToken    String?
+  passwordResetExpires  DateTime?
+  googleId              String?  @unique
+  provider              AuthProvider @default(LOCAL)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   // Relacionamentos
   bots         Bot[]
@@ -35,6 +41,13 @@ enum Plan {
   FREE
   PRO
   ENTERPRISE
+}
+
+// Provedores de autenticação
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  FACEBOOK
 }
 
 // Sessões de usuário (para JWT refresh)
@@ -362,4 +375,34 @@ enum WebhookStatus {
   ACTIVE
   INACTIVE
   FAILED
+}
+
+// Leads capturados
+model Lead {
+  id        String    @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String?
+  source    String    @default("website")
+  status    LeadStatus @default(NEW)
+  ipAddress String?
+  userAgent String?
+  utmSource String?
+  utmMedium String?
+  utmCampaign String?
+  metadata  Json      @default("{}")
+  convertedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("leads")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
 }

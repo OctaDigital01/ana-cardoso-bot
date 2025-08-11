@@ -105,13 +105,23 @@ export interface Analytics {
 
 // Auth API
 export const authAPI = {
-  login: async (email: string, password: string): Promise<{ user: User; token: string }> => {
+  login: async (email: string, password: string): Promise<{ user: User; accessToken: string; refreshToken: string }> => {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   },
 
-  register: async (name: string, email: string, password: string): Promise<{ user: User; token: string }> => {
+  register: async (name: string, email: string, password: string): Promise<{ message: string; user: any }> => {
     const response = await api.post('/auth/register', { name, email, password });
+    return response.data;
+  },
+
+  verifyEmail: async (token: string): Promise<{ user: User; accessToken: string; refreshToken: string }> => {
+    const response = await api.post('/auth/verify-email', { token });
+    return response.data;
+  },
+
+  refreshToken: async (refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> => {
+    const response = await api.post('/auth/refresh', { refreshToken });
     return response.data;
   },
 

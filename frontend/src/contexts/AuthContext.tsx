@@ -10,6 +10,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
+  loginWithGoogle: () => void;
   logout: () => void;
 }
 
@@ -63,16 +65,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (name: string, email: string, password: string) => {
     try {
-      const { user: userData, token: authToken } = await authAPI.register(name, email, password);
-      
-      setUser(userData);
-      setToken(authToken);
-      
-      localStorage.setItem('auth_token', authToken);
-      localStorage.setItem('user', JSON.stringify(userData));
+      await authAPI.register(name, email, password);
+      // Don't auto-login after registration, user needs to verify email
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erro ao criar conta');
     }
+  };
+
+  const verifyEmail = async (token: string) => {
+    try {
+      const { user: userData, accessToken } = await authAPI.verifyEmail(token);
+      
+      setUser(userData);
+      setToken(accessToken);
+      
+      localStorage.setItem('auth_token', accessToken);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Erro ao verificar email');
+    }
+  };
+
+  const loginWithGoogle = () => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   const logout = () => {
@@ -89,6 +105,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user && !!token,
     login,
     register,
+    verifyEmail,
+    loginWithGoogle,
     logout,
   };
 
