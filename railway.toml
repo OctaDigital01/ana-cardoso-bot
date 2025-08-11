@@ -1,70 +1,64 @@
-# Railway Configuration
 [build]
-  builder = "DOCKERFILE"
-  dockerfilePath = "Dockerfile"
+builder = "dockerfile"
 
 [deploy]
-  numReplicas = 1
-  sleepApplication = false
-  restartPolicyType = "ON_FAILURE"
-  restartPolicyMaxRetries = 3
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
 
-# Backend Service
 [[services]]
-  name = "backend"
-  source = "backend"
-  
-  [services.build]
-    builder = "DOCKERFILE"
-    dockerfilePath = "Dockerfile"
-  
-  [services.deploy]
-    startCommand = "node dist/server.js"
-    healthcheckPath = "/health"
-    healthcheckTimeout = 300
-    numReplicas = 1
-    
-  [[services.variables]]
-    name = "NODE_ENV"
-    value = "production"
-    
-  [[services.variables]]
-    name = "PORT"
-    value = "3333"
+name = "backend"
+source = "backend"
 
-# Frontend Service
-[[services]]
-  name = "frontend"
-  source = "frontend"
-  
-  [services.build]
-    builder = "DOCKERFILE"
-    dockerfilePath = "Dockerfile"
-    
-  [services.deploy]
-    startCommand = "node server.js"
-    healthcheckPath = "/"
-    healthcheckTimeout = 300
-    numReplicas = 1
-    
-  [[services.variables]]
-    name = "NODE_ENV" 
-    value = "production"
-    
-  [[services.variables]]
-    name = "PORT"
-    value = "3000"
+[services.build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
-# Database Service
+[services.deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[services.variables]
+NODE_ENV = "production"
+PORT = "3333"
+DATABASE_URL = "postgresql://postgres:password@postgres:5432/telegram_bot_saas"
+JWT_SECRET = "your-super-secret-jwt-key-change-in-production"
+TELEGRAM_BOT_TOKEN = "your-telegram-bot-token-here"
+REDIS_URL = "redis://redis:6379"
+STRIPE_SECRET_KEY = "your-stripe-secret-key"
+STRIPE_WEBHOOK_SECRET = "your-stripe-webhook-secret"
+
 [[services]]
-  name = "postgres"
-  
-  [services.deploy]
-    template = "postgresql"
-    
-# Redis Service  
+name = "frontend" 
+source = "frontend"
+
+[services.build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[services.deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[services.variables]
+NODE_ENV = "production"
+NEXT_PUBLIC_API_URL = "https://backend.railway.app"
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "your-stripe-publishable-key"
+
 [[services]]
-  name = "redis"
-  
-  [services.deploy]
-    template = "redis"
+name = "postgres"
+source = "postgres:15"
+
+[services.variables]
+POSTGRES_DB = "telegram_bot_saas"
+POSTGRES_USER = "postgres"
+POSTGRES_PASSWORD = "password"
+
+[[services]]
+name = "redis"
+source = "redis:alpine"
