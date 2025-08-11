@@ -1,15 +1,11 @@
 [phases.setup]
-nixPkgs = ['nodejs-18_x', 'npm', 'python3']
+nixPkgs = ['nodejs-18_x', 'npm']
 
 [phases.install]
 cmds = ['npm ci']
 
 [phases.build]
-cmds = ['npm run build', 'npx prisma generate']
+cmds = ['npm run build']
 
 [start]
 cmd = 'npm start'
-
-[variables]
-NODE_ENV = 'production'
-PORT = '3333'
