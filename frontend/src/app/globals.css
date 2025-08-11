@@ -159,20 +159,31 @@ html {
 
 /* Glass Components */
 @layer components {
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+  }
+  
+  .glass-hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+  }
+  
   .glass-card {
-    @apply glass rounded-2xl p-6 transition-all duration-300 hover:glass-hover hover:-translate-y-1;
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:bg-white/10 hover:-translate-y-1;
   }
   
   .glass-button {
-    @apply glass rounded-xl px-6 py-3 transition-all duration-200 hover:glass-hover hover:-translate-y-0.5 active:translate-y-0;
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl px-6 py-3 transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0;
   }
   
   .glass-input {
-    @apply glass rounded-xl px-4 py-3 bg-opacity-50 placeholder:text-text-tertiary focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/20;
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl px-4 py-3 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20;
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent;
   }
   
   .gradient-border {
@@ -352,15 +363,15 @@ select:focus {
 
 /* Button Styles */
 .btn {
-  @apply inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background-primary;
+  @apply inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black;
 }
 
 .btn-primary {
-  @apply btn bg-gradient-to-r from-accent-primary to-accent-secondary text-white shadow-accent hover:shadow-accent-hover hover:-translate-y-0.5 focus:ring-accent-primary/50;
+  @apply btn bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:-translate-y-0.5 focus:ring-blue-500/50;
 }
 
 .btn-glass {
-  @apply btn glass hover:glass-hover focus:ring-accent-primary/50;
+  @apply btn bg-white/5 backdrop-blur-lg border border-white/10 hover:bg-white/10 focus:ring-blue-500/50;
 }
 
 .btn-sm {
