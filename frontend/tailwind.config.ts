@@ -203,7 +203,7 @@ const config: Config = {
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
     // Plugin personalizado para glass effects
-    function({ addUtilities, theme }) {
+    function({ addUtilities, theme }: any) {
       const newUtilities = {
         '.glass': {
           background: theme('colors.glass.bg'),
