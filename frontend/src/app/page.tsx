@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Bot, Sparkles, Zap, Shield, BarChart3, Rocket } from 'lucide-react'
+import Link from 'next/link'
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
@@ -43,12 +44,12 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <button className="btn btn-glass btn-md">
+            <Link href="/login" className="btn btn-glass btn-md">
               Entrar
-            </button>
-            <button className="btn btn-primary btn-md">
+            </Link>
+            <Link href="/register" className="btn btn-primary btn-md">
               Começar Grátis
-            </button>
+            </Link>
           </motion.div>
         </div>
       </nav>
@@ -84,13 +85,13 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6 }}
           >
-            <button className="btn btn-primary btn-lg group">
+            <Link href="/register" className="btn btn-primary btn-lg group">
               <Rocket className="w-5 h-5 mr-2 group-hover:translate-x-0.5 transition-transform" />
               Criar Meu Bot Agora
-            </button>
-            <button className="btn btn-glass btn-lg">
+            </Link>
+            <Link href="/demo" className="btn btn-glass btn-lg">
               Ver Demo ao Vivo
-            </button>
+            </Link>
           </motion.div>
 
           <motion.div 
@@ -189,9 +190,9 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button className="btn btn-primary btn-lg">
+              <Link href="/register" className="btn btn-primary btn-lg">
                 Começar Gratuitamente
-              </button>
+              </Link>
               <div className="text-sm text-text-tertiary">
                 Não é necessário cartão de crédito
               </div>

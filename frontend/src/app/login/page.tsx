@@ -2,24 +2,49 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bot, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Bot, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Simular login
-    setTimeout(() => {
+    try {
+      // Validação básica
+      if (!email || !password) {
+        throw new Error('Email e senha são obrigatórios');
+      }
+
+      if (!/\S+@\S+\.\S+/.test(email)) {
+        throw new Error('Email inválido');
+      }
+
+      // Simular API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Para demo, aceitar qualquer email/senha válidos
+      setSuccess(true);
+      
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
+      
+    } catch (err: any) {
+      setError(err.message || 'Erro ao fazer login. Tente novamente.');
+    } finally {
       setIsLoading(false);
-      console.log('Login attempt:', { email, password });
-    }, 1500);
+    }
   };
 
   return (
@@ -47,6 +72,20 @@ export default function LoginPage() {
 
         {/* Login Form */}
         <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-8 border border-white/10">
+          {success && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center text-green-400 mb-6">
+              <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Login realizado com sucesso! Redirecionando...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center text-red-400 mb-6">
+              <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>

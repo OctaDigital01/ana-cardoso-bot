@@ -14,8 +14,10 @@ import {
   Trash2,
   ExternalLink,
   Copy,
-  CheckCircle
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface TelegramBot {
   id: string;
@@ -32,6 +34,8 @@ export default function DashboardPage() {
   const [bots, setBots] = useState<TelegramBot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     // Simular carregamento dos bots
@@ -68,12 +72,36 @@ export default function DashboardPage() {
     setTimeout(() => setCopiedUrl(null), 2000);
   };
 
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
   const toggleBotStatus = (botId: string) => {
+    const bot = bots.find(b => b.id === botId);
+    const newStatus = bot?.status === 'active' ? 'inactive' : 'active';
+    
     setBots(prev => prev.map(bot => 
       bot.id === botId 
-        ? { ...bot, status: bot.status === 'active' ? 'inactive' : 'active' }
+        ? { ...bot, status: newStatus }
         : bot
     ));
+
+    showNotification('success', `Bot ${newStatus === 'active' ? 'ativado' : 'desativado'} com sucesso!`);
+  };
+
+  const confirmDeleteBot = (botId: string) => {
+    setConfirmDelete(botId);
+  };
+
+  const deleteBot = (botId: string) => {
+    setBots(prev => prev.filter(bot => bot.id !== botId));
+    setConfirmDelete(null);
+    showNotification('success', 'Bot excluído com sucesso!');
+  };
+
+  const cancelDelete = () => {
+    setConfirmDelete(null);
   };
 
   if (isLoading) {
@@ -114,6 +142,28 @@ export default function DashboardPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Notification */}
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg border backdrop-blur-lg ${
+              notification.type === 'success' 
+                ? 'bg-green-500/10 border-green-500/20 text-green-400' 
+                : 'bg-red-500/10 border-red-500/20 text-red-400'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              {notification.type === 'success' ? (
+                <CheckCircle className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              <span className="text-sm">{notification.message}</span>
+            </div>
+          </motion.div>
+        )}
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <motion.div
@@ -194,10 +244,10 @@ export default function DashboardPage() {
         {/* Bots Section */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Meus Bots</h2>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+          <Link href="/dashboard/create-bot" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
             <Plus className="w-4 h-4" />
             <span>Criar Bot</span>
-          </button>
+          </Link>
         </div>
 
         {/* Bots Grid */}
@@ -297,7 +347,11 @@ export default function DashboardPage() {
                     <ExternalLink className="w-4 h-4" />
                   </button>
                   
-                  <button className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors" title="Excluir">
+                  <button 
+                    onClick={() => confirmDeleteBot(bot.id)}
+                    className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors" 
+                    title="Excluir"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -311,10 +365,49 @@ export default function DashboardPage() {
             <Bot className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">Nenhum bot criado ainda</h3>
             <p className="text-gray-400 mb-6">Crie seu primeiro bot para começar a automatizar conversas</p>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 mx-auto transition-colors">
+            <Link href="/dashboard/create-bot" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 mx-auto transition-colors">
               <Plus className="w-5 h-5" />
               <span>Criar Primeiro Bot</span>
-            </button>
+            </Link>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {confirmDelete && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-white/10"
+            >
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-500/20 rounded-full">
+                <AlertCircle className="w-6 h-6 text-red-400" />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-white text-center mb-2">
+                Confirmar Exclusão
+              </h3>
+              
+              <p className="text-gray-400 text-center mb-6">
+                Tem certeza que deseja excluir este bot? Esta ação não pode ser desfeita.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => deleteBot(confirmDelete)}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </div>
