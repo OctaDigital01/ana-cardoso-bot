@@ -307,7 +307,22 @@ export async function initializeQueues() {
     logger.info('✅ Filas de processamento inicializadas com sucesso')
   } catch (error) {
     logger.error('❌ Erro ao inicializar filas:', error)
-    throw error
+    logger.warn('⚠️ Servidor continuará sem filas de processamento')
+    
+    // Don't throw error in production to allow service to start
+    if (config.nodeEnv === 'production') {
+      logger.warn('🔄 Tentará reconectar com filas em background')
+      // Try to reconnect in background
+      setTimeout(async () => {
+        try {
+          await initializeQueues()
+        } catch (retryError) {
+          logger.error('❌ Falha na reconexão das filas:', retryError)
+        }
+      }, 15000) // Retry after 15 seconds
+    } else {
+      throw error
+    }
   }
 }
 

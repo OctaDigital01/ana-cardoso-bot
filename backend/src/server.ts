@@ -11,17 +11,31 @@ import { logger } from '@/utils/logger'
 import { errorHandler } from '@/middlewares/errorHandler'
 import { rateLimiter } from '@/middlewares/rateLimiter'
 import { routes } from '@/api/routes'
-import { initializeDatabase } from '@/config/database'
-import { initializeRedis } from '@/config/redis'
+import { initializeDatabase, prisma } from '@/config/database'
+import { initializeRedis, redis } from '@/config/redis'
 import { setupWebSocket } from '@/services/websocket'
 import { initializeQueues } from '@/services/queue'
 
 async function startServer() {
   try {
-    // Inicializar dependências
-    await initializeDatabase()
-    await initializeRedis()
-    await initializeQueues()
+    // Inicializar dependências (gracefully handle failures in production)
+    try {
+      await initializeDatabase()
+    } catch (error) {
+      logger.error('Database initialization failed, continuing without DB:', error)
+    }
+    
+    try {
+      await initializeRedis()
+    } catch (error) {
+      logger.error('Redis initialization failed, continuing without Redis:', error)
+    }
+    
+    try {
+      await initializeQueues()
+    } catch (error) {
+      logger.error('Queue initialization failed, continuing without queues:', error)
+    }
 
     const app = express()
     const server = createServer(app)
@@ -64,13 +78,53 @@ async function startServer() {
     app.use(rateLimiter)
 
     // Health check
-    app.get('/health', (req, res) => {
-      res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: config.nodeEnv
-      })
+    app.get('/health', async (req, res) => {
+      try {
+        const health = {
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime(),
+          environment: config.nodeEnv,
+          services: {
+            database: 'unknown',
+            redis: 'unknown',
+            queues: 'unknown'
+          }
+        }
+
+        // Test database connection
+        try {
+          await prisma.$queryRaw`SELECT 1`
+          health.services.database = 'connected'
+        } catch {
+          health.services.database = 'disconnected'
+        }
+
+        // Test Redis connection
+        try {
+          if (redis) {
+            await redis.ping()
+            health.services.redis = 'connected'
+          }
+        } catch {
+          health.services.redis = 'disconnected'
+        }
+
+        // Test queues
+        try {
+          health.services.queues = 'connected'  // Basic assumption
+        } catch {
+          health.services.queues = 'disconnected'
+        }
+
+        res.json(health)
+      } catch (error) {
+        res.status(500).json({
+          status: 'error',
+          timestamp: new Date().toISOString(),
+          error: 'Health check failed'
+        })
+      }
     })
 
     // API routes

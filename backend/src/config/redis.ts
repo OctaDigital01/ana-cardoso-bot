@@ -46,7 +46,22 @@ export async function initializeRedis() {
 
   } catch (error) {
     logger.error('❌ Erro ao conectar com Redis:', error)
-    throw error
+    logger.warn('⚠️ Servidor continuará sem Redis')
+    
+    // Don't throw error in production to allow service to start
+    if (config.nodeEnv === 'production') {
+      logger.warn('🔄 Tentará reconectar com Redis em background')
+      // Try to reconnect in background
+      setTimeout(async () => {
+        try {
+          await initializeRedis()
+        } catch (retryError) {
+          logger.error('❌ Falha na reconexão Redis:', retryError)
+        }
+      }, 10000) // Retry after 10 seconds
+    } else {
+      throw error
+    }
   }
 }
 

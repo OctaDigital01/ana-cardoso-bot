@@ -1,0 +1,12 @@
+{
+  "query": "mutation serviceUpdate($id: String!, $input: ServiceUpdateInput!) { serviceUpdate(id: $id, input: $input) { id } }",
+  "variables": {
+    "id": "1ac0d3a6-8919-4489-bbf9-d59fcff2314d",
+    "input": {
+      "name": "postgres",
+      "source": {
+        "image": "postgres:15"
+      }
+    }
+  }
+}

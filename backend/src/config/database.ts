@@ -29,7 +29,22 @@ export async function initializeDatabase() {
     
   } catch (error) {
     logger.error('❌ Erro ao conectar com banco de dados:', error)
-    throw error
+    logger.warn('⚠️ Servidor continuará sem conexão com banco de dados')
+    
+    // Don't throw error in production to allow service to start
+    if (config.nodeEnv === 'production') {
+      logger.warn('🔄 Tentará reconectar com banco de dados em background')
+      // Try to reconnect in background
+      setTimeout(async () => {
+        try {
+          await initializeDatabase()
+        } catch (retryError) {
+          logger.error('❌ Falha na reconexão:', retryError)
+        }
+      }, 10000) // Retry after 10 seconds
+    } else {
+      throw error
+    }
   }
 }
 

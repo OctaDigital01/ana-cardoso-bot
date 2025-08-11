@@ -5,8 +5,9 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsup src --out-dir dist",
+    "build": "tsup src --out-dir dist && npx prisma generate",
     "start": "node dist/server.js",
+    "start:simple": "node simple-server.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:e2e": "jest --config jest.e2e.config.js",

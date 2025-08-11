@@ -1,0 +1,6 @@
+{
+  "query": "query project($id: String!) { project(id: $id) { id name services { edges { node { id name icon } } } } }",
+  "variables": {
+    "id": "ec319e25-4a4f-4748-842f-987538043efe"
+  }
+}

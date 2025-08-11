@@ -1,0 +1,11 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[env]
+POSTGRES_DB = "telegram_bot_saas"
+POSTGRES_USER = "postgres"
+POSTGRES_PASSWORD = "TelegramBotSaas2024!@#"

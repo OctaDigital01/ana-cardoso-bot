@@ -1,0 +1,22 @@
+{
+  "NODE_ENV": "production",
+  "PORT": "3333",
+  "API_URL": "https://backend-production-58eb.up.railway.app",
+  "DATABASE_URL": "postgresql://postgres:TelegramBotSaas2024_@postgres.railway.internal:5432/telegram_bot_saas",
+  "REDIS_URL": "redis://default:@redis.railway.internal:6379",
+  "JWT_SECRET": "telegram-bot-manager-super-secret-jwt-production-key-32-chars-min-2024",
+  "JWT_REFRESH_SECRET": "telegram-bot-manager-super-secret-refresh-production-key-32-chars-min-2024",
+  "JWT_EXPIRES_IN": "15m",
+  "JWT_REFRESH_EXPIRES_IN": "7d",
+  "ENCRYPTION_KEY": "ProductionEncryptionKey123456789012",
+  "TELEGRAM_WEBHOOK_DOMAIN": "https://backend-production-58eb.up.railway.app",
+  "RATE_LIMIT_WINDOW": "60000",
+  "RATE_LIMIT_MAX": "100",
+  "LOG_LEVEL": "info",
+  "LOG_TO_FILE": "true",
+  "ENABLE_REGISTRATION": "true",
+  "ENABLE_EMAIL_VERIFICATION": "false",
+  "ENABLE_PASSWORD_RESET": "true",
+  "ENABLE_TWO_FACTOR": "false",
+  "ENABLE_SWAGGER": "false"
+}

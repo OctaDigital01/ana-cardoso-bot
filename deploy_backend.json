@@ -1,0 +1,7 @@
+{
+  "query": "mutation serviceInstanceRedeploy($environmentId: String!, $serviceId: String!) { serviceInstanceRedeploy(environmentId: $environmentId, serviceId: $serviceId) }",
+  "variables": {
+    "environmentId": "96c7b5a8-650d-4255-8f5c-120345d9b52e",
+    "serviceId": "ce1125a5-4d5f-48ad-b2d6-4b757664b5e7"
+  }
+}
