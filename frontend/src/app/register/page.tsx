@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Mail, Lock, Eye, EyeOff, ArrowRight, User, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register, isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,6 +21,13 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -55,17 +64,18 @@ export default function RegisterPage() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({});
     
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Real API call
+      await register(formData.name, formData.email, formData.password);
       
       setSuccess(true);
       setTimeout(() => {
         router.push('/dashboard');
-      }, 2000);
-    } catch (error) {
-      setErrors({ general: 'Erro ao criar conta. Tente novamente.' });
+      }, 1500);
+    } catch (error: any) {
+      setErrors({ general: error.message || 'Erro ao criar conta. Tente novamente.' });
     } finally {
       setIsLoading(false);
     }

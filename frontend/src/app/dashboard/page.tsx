@@ -1,60 +1,98 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
   Users, 
   MessageCircle, 
   DollarSign,
-  Bot,
+  Bot as BotIcon,
   Settings,
   MessageSquare,
   Eye,
   Calendar,
   Clock,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  LogOut
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { botsAPI, analyticsAPI, messagesAPI, type Bot, type Analytics } from '@/lib/api';
 
-// Mock data para o dashboard
-const mockData = {
-  overview: {
-    totalBots: 3,
-    activeUsers: 1247,
-    messagesThisMonth: 8439,
-    revenue: 2850.50,
-    growth: {
-      bots: +15.2,
-      users: +23.5,
-      messages: +45.8,
-      revenue: +18.9
-    }
-  },
-  chartData: [
-    { month: 'Jan', messages: 3200, users: 890, revenue: 1850 },
-    { month: 'Fev', messages: 4100, users: 1050, revenue: 2100 },
-    { month: 'Mar', messages: 3800, users: 980, revenue: 1950 },
-    { month: 'Abr', messages: 5200, users: 1180, revenue: 2400 },
-    { month: 'Mai', messages: 6800, users: 1320, revenue: 2650 },
-    { month: 'Jun', messages: 8439, users: 1247, revenue: 2850 }
-  ],
-  recentActivity: [
-    { id: 1, type: 'message', description: 'Bot Atendimento enviou 127 mensagens', time: '2 min atrás' },
-    { id: 2, type: 'user', description: '15 novos usuários se conectaram', time: '5 min atrás' },
-    { id: 3, type: 'bot', description: 'Bot Vendas foi ativado', time: '1h atrás' },
-    { id: 4, type: 'revenue', description: 'Nova assinatura Pro adicionada', time: '3h atrás' }
-  ]
-};
-
-export default function DashboardPage() {
+function DashboardContent() {
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  // Real data state
+  const [bots, setBots] = useState<Bot[]>([]);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
 
+  // Load data on mount
   useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
+    loadDashboardData();
   }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+
+      const [botsData, analyticsData] = await Promise.all([
+        botsAPI.getAll(),
+        analyticsAPI.getDashboard()
+      ]);
+
+      setBots(botsData);
+      setAnalytics(analyticsData);
+
+      if (botsData.length > 0 && !selectedBot) {
+        setSelectedBot(botsData[0] || null);
+      }
+    } catch (err: any) {
+      console.error('Error loading dashboard data:', err);
+      setError(err.message || 'Erro ao carregar dados');
+      // Fallback to mock data if API fails
+      setAnalytics({
+        totalBots: 0,
+        activeUsers: 0,
+        messagesThisMonth: 0,
+        revenue: 0,
+        growth: { bots: 0, users: 0, messages: 0, revenue: 0 },
+        chartData: [],
+        recentActivity: []
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBotToggle = async (botId: string) => {
+    try {
+      const updatedBot = await botsAPI.toggle(botId);
+      setBots(prev => prev.map(bot => bot.id === botId ? updatedBot : bot));
+    } catch (err: any) {
+      setError('Erro ao alterar status do bot');
+    }
+  };
+
+  const handleBotDelete = async (botId: string) => {
+    try {
+      await botsAPI.delete(botId);
+      setBots(prev => prev.filter(bot => bot.id !== botId));
+      if (selectedBot?.id === botId) {
+        setSelectedBot(bots.find(bot => bot.id !== botId) || null);
+      }
+    } catch (err: any) {
+      setError('Erro ao excluir bot');
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -75,25 +113,55 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Bot className="w-5 h-5 text-white" />
+                <BotIcon className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-semibold text-white">Dashboard</h1>
-                <p className="text-white/60 text-sm">Ana Cardoso Bot Manager</p>
+                <p className="text-white/60 text-sm">Bem-vindo, {user?.name}</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-3">
-              <button className="w-8 h-8 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] transition-colors flex items-center justify-center">
-                <Settings className="w-4 h-4 text-white/70" />
+              <button 
+                onClick={logout}
+                className="w-8 h-8 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] transition-colors flex items-center justify-center"
+                title="Sair"
+              >
+                <LogOut className="w-4 h-4 text-white/70" />
               </button>
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl shadow-sm"></div>
+              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl shadow-sm flex items-center justify-center">
+                <span className="text-white text-xs font-semibold">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-6 flex items-center text-red-400">
+            <div className="w-5 h-5 bg-red-500/20 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+              <span className="text-red-400 text-xs">!</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Erro ao carregar dados</p>
+              <p className="text-xs text-red-400/80 mt-1">{error}</p>
+            </div>
+            <button
+              onClick={() => {
+                setError('');
+                loadDashboardData();
+              }}
+              className="ml-auto bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded-lg text-sm transition-colors"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="mb-8">
           <div className="flex space-x-1 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-1 border border-white/[0.08] w-fit">
@@ -148,15 +216,15 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white/60 text-sm font-medium">Total de Bots</p>
-                    <p className="text-3xl font-semibold text-white mt-2">{mockData.overview.totalBots}</p>
+                    <p className="text-3xl font-semibold text-white mt-2">{analytics?.totalBots || bots.length}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-blue-400" />
+                    <BotIcon className="w-6 h-6 text-blue-400" />
                   </div>
                 </div>
                 <div className="flex items-center mt-4 text-sm">
                   <ArrowUpRight className="w-4 h-4 text-green-400 mr-1" />
-                  <span className="text-green-400 font-medium">+{mockData.overview.growth.bots}%</span>
+                  <span className="text-green-400 font-medium">+{analytics?.growth?.bots || 0}%</span>
                   <span className="text-white/50 ml-2">vs mês anterior</span>
                 </div>
               </div>
@@ -165,7 +233,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white/60 text-sm font-medium">Usuários Ativos</p>
-                    <p className="text-3xl font-semibold text-white mt-2">{mockData.overview.activeUsers.toLocaleString()}</p>
+                    <p className="text-3xl font-semibold text-white mt-2">{analytics?.activeUsers?.toLocaleString() || '0'}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center">
                     <Users className="w-6 h-6 text-purple-400" />
@@ -173,7 +241,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center mt-4 text-sm">
                   <ArrowUpRight className="w-4 h-4 text-green-400 mr-1" />
-                  <span className="text-green-400 font-medium">+{mockData.overview.growth.users}%</span>
+                  <span className="text-green-400 font-medium">+{analytics?.growth?.users || 0}%</span>
                   <span className="text-white/50 ml-2">vs mês anterior</span>
                 </div>
               </div>
@@ -182,7 +250,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white/60 text-sm font-medium">Mensagens</p>
-                    <p className="text-3xl font-semibold text-white mt-2">{mockData.overview.messagesThisMonth.toLocaleString()}</p>
+                    <p className="text-3xl font-semibold text-white mt-2">{analytics?.messagesThisMonth?.toLocaleString() || '0'}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center">
                     <MessageCircle className="w-6 h-6 text-green-400" />
@@ -190,7 +258,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center mt-4 text-sm">
                   <ArrowUpRight className="w-4 h-4 text-green-400 mr-1" />
-                  <span className="text-green-400 font-medium">+{mockData.overview.growth.messages}%</span>
+                  <span className="text-green-400 font-medium">+{analytics?.growth?.messages || 0}%</span>
                   <span className="text-white/50 ml-2">este mês</span>
                 </div>
               </div>
@@ -199,7 +267,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white/60 text-sm font-medium">Faturamento</p>
-                    <p className="text-3xl font-semibold text-white mt-2">R$ {mockData.overview.revenue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                    <p className="text-3xl font-semibold text-white mt-2">R$ {analytics?.revenue?.toLocaleString('pt-BR', {minimumFractionDigits: 2}) || '0,00'}</p>
                   </div>
                   <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center">
                     <DollarSign className="w-6 h-6 text-orange-400" />
@@ -207,7 +275,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center mt-4 text-sm">
                   <ArrowUpRight className="w-4 h-4 text-green-400 mr-1" />
-                  <span className="text-green-400 font-medium">+{mockData.overview.growth.revenue}%</span>
+                  <span className="text-green-400 font-medium">+{analytics?.growth?.revenue || 0}%</span>
                   <span className="text-white/50 ml-2">vs mês anterior</span>
                 </div>
               </div>
@@ -229,7 +297,7 @@ export default function DashboardPage() {
                 
                 {/* Simple Chart Visualization */}
                 <div className="h-64 flex items-end justify-between space-x-2">
-                  {mockData.chartData.map((data, index) => (
+                  {(analytics?.chartData || []).map((data, index) => (
                     <div key={data.month} className="flex-1 flex flex-col items-center space-y-2">
                       <div className="w-full flex flex-col items-center space-y-1">
                         {/* Messages Bar */}
@@ -266,7 +334,7 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-semibold text-white mb-6">Atividade Recente</h3>
                 
                 <div className="space-y-4">
-                  {mockData.recentActivity.map((activity) => (
+                  {(analytics?.recentActivity || []).map((activity) => (
                     <div key={activity.id} className="flex items-start space-x-3">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         activity.type === 'message' ? 'bg-blue-500/20' :
@@ -275,7 +343,7 @@ export default function DashboardPage() {
                       }`}>
                         {activity.type === 'message' && <MessageCircle className="w-4 h-4 text-blue-400" />}
                         {activity.type === 'user' && <Users className="w-4 h-4 text-purple-400" />}
-                        {activity.type === 'bot' && <Bot className="w-4 h-4 text-green-400" />}
+                        {activity.type === 'bot' && <BotIcon className="w-4 h-4 text-green-400" />}
                         {activity.type === 'revenue' && <DollarSign className="w-4 h-4 text-orange-400" />}
                       </div>
                       <div className="flex-1">
@@ -299,7 +367,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link href="/dashboard/create-bot" className="group flex items-center space-x-4 p-4 bg-white/[0.04] hover:bg-white/[0.08] rounded-2xl transition-colors">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
-                    <Bot className="w-6 h-6 text-blue-400" />
+                    <BotIcon className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
                     <h4 className="text-white font-medium">Criar Novo Bot</h4>
@@ -708,57 +776,69 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="bg-white/[0.06] rounded-2xl p-6 border border-white/[0.08]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center">
-                        <Bot className="w-6 h-6 text-green-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-white font-semibold">Bot Atendimento</h4>
-                        <p className="text-white/60 text-sm">@atendimento_bot</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-green-400 text-xs bg-green-500/20 px-2 py-1 rounded-full">Ativo</span>
-                          <span className="text-white/50 text-xs">847 mensagens enviadas</span>
+                {bots.length === 0 ? (
+                  <div className="bg-white/[0.06] rounded-2xl p-8 border border-white/[0.08] text-center">
+                    <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <BotIcon className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <h4 className="text-white font-semibold mb-2">Nenhum bot configurado</h4>
+                    <p className="text-white/60 text-sm mb-4">Adicione seu primeiro bot para começar</p>
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                      + Adicionar Primeiro Bot
+                    </button>
+                  </div>
+                ) : (
+                  bots.map((bot) => (
+                    <div key={bot.id} className="bg-white/[0.06] rounded-2xl p-6 border border-white/[0.08]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                            bot.isActive ? 'bg-green-500/20' : 'bg-gray-500/20'
+                          }`}>
+                            <BotIcon className={`w-6 h-6 ${
+                              bot.isActive ? 'text-green-400' : 'text-gray-400'
+                            }`} />
+                          </div>
+                          <div>
+                            <h4 className="text-white font-semibold">{bot.name}</h4>
+                            <p className="text-white/60 text-sm">@{bot.username}</p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                bot.isActive 
+                                  ? 'text-green-400 bg-green-500/20' 
+                                  : 'text-gray-400 bg-gray-500/20'
+                              }`}>
+                                {bot.isActive ? 'Ativo' : 'Inativo'}
+                              </span>
+                              <span className="text-white/50 text-xs">{bot.messageCount || 0} mensagens enviadas</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button 
+                            onClick={() => handleBotDelete(bot.id)}
+                            className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-500/[0.08] rounded-xl transition-colors"
+                            title="Excluir bot"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleBotToggle(bot.id)}
+                            className={`w-10 h-6 rounded-full relative transition-colors ${
+                              bot.isActive ? 'bg-green-500/20' : 'bg-white/[0.08]'
+                            }`}
+                          >
+                            <div className={`w-4 h-4 rounded-full absolute top-1 transition-all ${
+                              bot.isActive 
+                                ? 'bg-green-400 right-1' 
+                                : 'bg-white/30 left-1'
+                            }`}></div>
+                          </button>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <button className="p-2 text-white/60 hover:text-white hover:bg-white/[0.08] rounded-xl transition-colors">
-                        <Settings className="w-4 h-4" />
-                      </button>
-                      <div className="w-10 h-6 bg-green-500/20 rounded-full relative">
-                        <div className="w-4 h-4 bg-green-400 rounded-full absolute top-1 right-1"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/[0.06] rounded-2xl p-6 border border-white/[0.08]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
-                        <Bot className="w-6 h-6 text-blue-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-white font-semibold">Bot Vendas</h4>
-                        <p className="text-white/60 text-sm">@vendas_bot</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-gray-400 text-xs bg-gray-500/20 px-2 py-1 rounded-full">Inativo</span>
-                          <span className="text-white/50 text-xs">234 mensagens enviadas</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button className="p-2 text-white/60 hover:text-white hover:bg-white/[0.08] rounded-xl transition-colors">
-                        <Settings className="w-4 h-4" />
-                      </button>
-                      <div className="w-10 h-6 bg-white/[0.08] rounded-full relative">
-                        <div className="w-4 h-4 bg-white/30 rounded-full absolute top-1 left-1"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -840,5 +920,13 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

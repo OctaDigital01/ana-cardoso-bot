@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -83,9 +84,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body className={`${inter.className} antialiased bg-background-primary text-text-primary overflow-x-hidden`}>
-        <div id="root" className="min-h-screen">
-          {children}
-        </div>
+        <AuthProvider>
+          <div id="root" className="min-h-screen">
+            {children}
+          </div>
+        </AuthProvider>
         <div id="modal-root" />
         <div id="toast-root" />
       </body>
