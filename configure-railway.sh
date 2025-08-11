@@ -1,108 +1,105 @@
 #!/bin/bash
 
-# Script para configurar todas as variáveis do Railway automaticamente
+# Script de configuração para Railway - Ana Cardoso Bot v2
 set -e
 
-TOKEN="d2ec8305-b445-41ee-a0fa-5bb663df7635"
-PROJECT_ID="ec319e25-4a4f-4748-842f-987538043efe"
-ENV_ID="96c7b5a8-650d-4255-8f5c-120345d9b52e"
-BACKEND_ID="ce1125a5-4d5f-48ad-b2d6-4b757664b5e7"
-FRONTEND_ID="822419b4-6470-4bca-b5e4-3d8043a00016"
-POSTGRES_ID="1ac0d3a6-8919-4489-bbf9-d59fcff2314d"
-REDIS_ID="35866238-ec1c-49e1-a59f-27904b8db284"
-
-API_URL="https://backboard.railway.com/graphql/v2"
-
-echo "🚀 Configurando Railway com todas as variáveis..."
-
-# Função para configurar variável
-set_var() {
-    local service_id=$1
-    local var_name=$2
-    local var_value=$3
-    
-    echo "Setting $var_name for service $service_id..."
-    curl -s --request POST \
-        --url $API_URL \
-        --header "Authorization: Bearer $TOKEN" \
-        --header 'Content-Type: application/json' \
-        --data "{\"query\":\"mutation { variableUpsert(input: { projectId: \\\"$PROJECT_ID\\\", environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$service_id\\\", name: \\\"$var_name\\\", value: \\\"$var_value\\\" }) { id } }\"}" > /dev/null
-}
-
-# Configurar variáveis do PostgreSQL
-echo "📊 Configurando PostgreSQL..."
-set_var $POSTGRES_ID "POSTGRES_DB" "telegram_bot_saas"
-set_var $POSTGRES_ID "POSTGRES_USER" "postgres"
-set_var $POSTGRES_ID "POSTGRES_PASSWORD" "TelegramBotSaas2024_"
-set_var $POSTGRES_ID "PGDATA" "/var/lib/postgresql/data/pgdata"
-
-# Configurar variáveis do Redis
-echo "🗄️ Configurando Redis..."
-set_var $REDIS_ID "REDIS_PASSWORD" "TelegramBotRedis2024_"
-
-# Configurar variáveis do Backend
-echo "⚡ Configurando Backend..."
-set_var $BACKEND_ID "NODE_ENV" "production"
-set_var $BACKEND_ID "PORT" "3333"
-set_var $BACKEND_ID "DATABASE_URL" "postgresql://postgres:TelegramBotSaas2024_@postgres.railway.internal:5432/telegram_bot_saas"
-set_var $BACKEND_ID "REDIS_URL" "redis://default:TelegramBotRedis2024_@redis.railway.internal:6379"
-set_var $BACKEND_ID "JWT_SECRET" "telegram-bot-manager-super-secret-jwt-key-production-32-chars"
-set_var $BACKEND_ID "JWT_REFRESH_SECRET" "telegram-bot-manager-super-secret-refresh-key-production-32-chars"
-set_var $BACKEND_ID "ENCRYPTION_KEY" "telegrambotmanager32charkey12345"
-set_var $BACKEND_ID "API_URL" "https://backend-production-58eb.up.railway.app"
-set_var $BACKEND_ID "FRONTEND_URL" "https://frontend-production-df31.up.railway.app"
-set_var $BACKEND_ID "TELEGRAM_WEBHOOK_DOMAIN" "https://backend-production-58eb.up.railway.app"
-set_var $BACKEND_ID "RATE_LIMIT_WINDOW" "60000"
-set_var $BACKEND_ID "RATE_LIMIT_MAX" "1000"
-set_var $BACKEND_ID "LOG_LEVEL" "info"
-set_var $BACKEND_ID "ENABLE_REGISTRATION" "true"
-set_var $BACKEND_ID "ENABLE_SWAGGER" "false"
-
-# Configurar variáveis do Frontend
-echo "🎨 Configurando Frontend..."
-set_var $FRONTEND_ID "NODE_ENV" "production"
-set_var $FRONTEND_ID "PORT" "3000"
-set_var $FRONTEND_ID "NEXT_PUBLIC_API_URL" "https://backend-production-58eb.up.railway.app/api/v1"
-set_var $FRONTEND_ID "NEXT_PUBLIC_WS_URL" "wss://backend-production-58eb.up.railway.app"
-set_var $FRONTEND_ID "NEXT_PUBLIC_APP_URL" "https://frontend-production-df31.up.railway.app"
-set_var $FRONTEND_ID "NEXT_PUBLIC_APP_NAME" "TelegramBot Manager"
-set_var $FRONTEND_ID "NEXT_PUBLIC_ENABLE_PWA" "true"
-set_var $FRONTEND_ID "NEXT_PUBLIC_ENABLE_ANALYTICS" "true"
-set_var $FRONTEND_ID "NEXT_TELEMETRY_DISABLED" "1"
-
-echo "✅ Todas as variáveis configuradas!"
-
-# Redeploy todos os serviços
-echo "🔄 Redeployando todos os serviços..."
-
-curl -s --request POST \
-    --url $API_URL \
-    --header "Authorization: Bearer $TOKEN" \
-    --header 'Content-Type: application/json' \
-    --data "{\"query\":\"mutation { serviceInstanceRedeploy(environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$POSTGRES_ID\\\") }\"}" > /dev/null
-
-curl -s --request POST \
-    --url $API_URL \
-    --header "Authorization: Bearer $TOKEN" \
-    --header 'Content-Type: application/json' \
-    --data "{\"query\":\"mutation { serviceInstanceRedeploy(environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$REDIS_ID\\\") }\"}" > /dev/null
-
-curl -s --request POST \
-    --url $API_URL \
-    --header "Authorization: Bearer $TOKEN" \
-    --header 'Content-Type: application/json' \
-    --data "{\"query\":\"mutation { serviceInstanceRedeploy(environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$BACKEND_ID\\\") }\"}" > /dev/null
-
-curl -s --request POST \
-    --url $API_URL \
-    --header "Authorization: Bearer $TOKEN" \
-    --header 'Content-Type: application/json' \
-    --data "{\"query\":\"mutation { serviceInstanceRedeploy(environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$FRONTEND_ID\\\") }\"}" > /dev/null
-
-echo "🎉 Configuração completa! Deploy em andamento..."
+echo "🚀 Configurando projeto Railway para Ana Cardoso Bot..."
+echo "📍 Projeto: ana-cardoso-bot-v2"
+echo "🌐 GitHub: https://github.com/OctaDigital01/ana-cardoso-bot"
+echo "🚂 Railway: https://railway.com/project/2e7a4879-f9a3-40d7-89b6-4339e3c5e6ac"
 echo ""
-echo "🌐 URLs dos serviços:"
-echo "  Backend:  https://backend-production-58eb.up.railway.app"
-echo "  Frontend: https://frontend-production-df31.up.railway.app"
+
+# NOVO PROJETO IDs - Será necessário atualizar após criar os serviços
+PROJECT_ID="2e7a4879-f9a3-40d7-89b6-4339e3c5e6ac"
+
+echo "🔧 INSTRUÇÕES PARA CONFIGURAÇÃO MANUAL NO RAILWAY:"
 echo ""
-echo "📊 Dashboard: https://railway.app/project/$PROJECT_ID"
+echo "1. Acesse o projeto Railway:"
+echo "   https://railway.com/project/2e7a4879-f9a3-40d7-89b6-4339e3c5e6ac"
+echo ""
+echo "2. Adicione os seguintes serviços clicando em '+ New':"
+echo "   a) PostgreSQL Database"
+echo "   b) Redis Database"
+echo "   c) Backend Service (conectar ao GitHub repo: backend folder)"
+echo "   d) Frontend Service (conectar ao GitHub repo: frontend folder)"
+echo ""
+echo "3. Configurar variáveis de ambiente:"
+echo ""
+
+echo "📊 POSTGRESQL VARIABLES:"
+echo "   POSTGRES_DB=telegram_bot_saas"
+echo "   POSTGRES_USER=postgres" 
+echo "   POSTGRES_PASSWORD=TelegramBotSaas2024_"
+echo "   PGDATA=/var/lib/postgresql/data/pgdata"
+echo ""
+
+echo "🗄️ REDIS VARIABLES:"
+echo "   REDIS_PASSWORD=TelegramBotRedis2024_"
+echo ""
+
+echo "⚡ BACKEND SERVICE VARIABLES:"
+echo "   NODE_ENV=production"
+echo "   PORT=3333"
+echo "   DATABASE_URL=\${{Postgres.DATABASE_URL}}"
+echo "   REDIS_URL=\${{Redis.REDIS_URL}}"
+echo "   JWT_SECRET=telegram-bot-manager-super-secret-jwt-key-production-32-chars"
+echo "   JWT_REFRESH_SECRET=telegram-bot-manager-super-secret-refresh-key-production-32-chars"
+echo "   ENCRYPTION_KEY=telegrambotmanager32charkey12345"
+echo "   TELEGRAM_WEBHOOK_DOMAIN=\${{RAILWAY_STATIC_URL}}"
+echo "   FRONTEND_URL=[FRONTEND_SERVICE_URL]"
+echo "   RATE_LIMIT_WINDOW=60000"
+echo "   RATE_LIMIT_MAX=1000"
+echo "   LOG_LEVEL=info"
+echo "   ENABLE_REGISTRATION=true"
+echo "   ENABLE_SWAGGER=false"
+echo ""
+
+echo "🎨 FRONTEND SERVICE VARIABLES:"
+echo "   NODE_ENV=production"
+echo "   PORT=3000"
+echo "   NEXT_PUBLIC_API_URL=\${{Backend.RAILWAY_STATIC_URL}}/api/v1"
+echo "   NEXT_PUBLIC_WS_URL=wss://\${{Backend.RAILWAY_STATIC_URL}}"
+echo "   NEXT_PUBLIC_APP_URL=\${{RAILWAY_STATIC_URL}}"
+echo "   NEXT_PUBLIC_APP_NAME=Ana Cardoso Bot Manager"
+echo "   NEXT_PUBLIC_ENABLE_PWA=true"
+echo "   NEXT_PUBLIC_ENABLE_ANALYTICS=true"
+echo "   NEXT_TELEMETRY_DISABLED=1"
+
+echo ""
+echo "4. CONFIGURAÇÃO DOS SERVIÇOS:"
+echo ""
+echo "   Para BACKEND SERVICE:"
+echo "   - Root Directory: /backend"
+echo "   - Build Command: npm run build"  
+echo "   - Start Command: node dist/server.js"
+echo ""
+echo "   Para FRONTEND SERVICE:"
+echo "   - Root Directory: /frontend"
+echo "   - Build Command: npm run build"
+echo "   - Start Command: npm start"
+echo ""
+
+echo "5. APÓS CONFIGURAR TUDO:"
+echo "   - Deploy todos os serviços"
+echo "   - Configurar domínios customizados se necessário"
+echo "   - Testar as URLs geradas"
+echo ""
+
+echo "📋 CHECKLIST DE DEPLOYMENT:"
+echo "   □ PostgreSQL adicionado e rodando"
+echo "   □ Redis adicionado e rodando"  
+echo "   □ Backend conectado ao GitHub e rodando"
+echo "   □ Frontend conectado ao GitHub e rodando"
+echo "   □ Todas as variáveis configuradas"
+echo "   □ URLs funcionando corretamente"
+echo ""
+
+echo "🎯 IMPORTANTE:"
+echo "   - Substitua [FRONTEND_SERVICE_URL] pela URL real do frontend após deploy"
+echo "   - Configure seu TELEGRAM_BOT_TOKEN nas variáveis do backend"
+echo "   - Use \${{SERVICE_NAME.VARIABLE}} para referências entre serviços"
+echo ""
+
+echo "🎉 Configuração preparada!"
+echo "📊 Dashboard: https://railway.com/project/$PROJECT_ID"
+echo "🌐 GitHub: https://github.com/OctaDigital01/ana-cardoso-bot"

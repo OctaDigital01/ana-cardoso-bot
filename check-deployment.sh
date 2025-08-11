@@ -1,26 +1,18 @@
-#!/bin/bash
+#\!/bin/bash
 
-# Script para verificar status dos deployments
-set -e
+echo "🔍 Verificando deployment Railway..."
+echo "📊 Dashboard: https://railway.com/project/2e7a4879-f9a3-40d7-89b6-4339e3c5e6ac"
+echo ""
 
-echo "🔍 Verificando status dos deployments Railway..."
-
-# URLs para testar
-BACKEND_URL="https://backend-production-58eb.up.railway.app"
-FRONTEND_URL="https://frontend-production-df31.up.railway.app"
-
-echo "📡 Testando Backend ($BACKEND_URL)..."
-echo "Response:"
-curl -s -w "\nStatus: %{http_code}\nTime: %{time_total}s\n" $BACKEND_URL || echo "❌ Backend não respondeu"
+# Backend status
+echo "⚡ Backend:"
+railway service backend > /dev/null 2>&1
+echo "Build Logs: https://railway.com/project/2e7a4879-f9a3-40d7-89b6-4339e3c5e6ac/service/aab90630-3e84-44f8-9255-4dbdc0f0174b"
 
 echo ""
-echo "🎨 Testando Frontend ($FRONTEND_URL)..."  
-echo "Response:"
-curl -s -w "\nStatus: %{http_code}\nTime: %{time_total}s\n" $FRONTEND_URL || echo "❌ Frontend não respondeu"
 
-echo ""
-echo "🏥 Testando Health Check do Backend..."
-curl -s -w "\nStatus: %{http_code}\n" "$BACKEND_URL/health" || echo "❌ Health check falhou"
+# Frontend status  
+echo "🎨 Frontend:"
+railway service frontend > /dev/null 2>&1
+echo "Build Logs: https://railway.com/project/2e7a4879-f9a3-40d7-89b6-4339e3c5e6ac/service/b46606da-98f5-42ef-b2a9-acd15ab0001e"
 
-echo ""
-echo "📊 Dashboard: https://railway.app/project/ec319e25-4a4f-4748-842f-987538043efe"
