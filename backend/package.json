@@ -5,8 +5,9 @@
   "main": "server-simple.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:simple": "node dev-server.js",
     "build": "tsup src --out-dir dist && npx prisma generate",
-    "start": "node server-simple.js",
+    "start": "node production-server.js",
     "start:simple": "node simple-server.js",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -18,7 +19,9 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:setup": "node scripts/setup-database.js",
+    "railway:deploy": "npx prisma generate && npx prisma db push && npm run db:setup"
   },
   "keywords": [
     "telegram",
