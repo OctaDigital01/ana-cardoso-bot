@@ -2,11 +2,11 @@
   "name": "telegram-bot-saas-backend",
   "version": "1.0.0",
   "description": "Backend do SaaS TelegramBot Manager",
-  "main": "dist/server.js",
+  "main": "server-simple.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsup src --out-dir dist && npx prisma generate",
-    "start": "node dist/server.js",
+    "start": "node server-simple.js",
     "start:simple": "node simple-server.js",
     "test": "jest",
     "test:watch": "jest --watch",
