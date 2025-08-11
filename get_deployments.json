@@ -1,6 +1,0 @@
-{
-  "query": "query project($id: String!) { project(id: $id) { services { edges { node { id name deployments(first: 1) { edges { node { id status createdAt logs { edges { node { message timestamp } } } } } } } } } } }",
-  "variables": {
-    "id": "ec319e25-4a4f-4748-842f-987538043efe"
-  }
-}

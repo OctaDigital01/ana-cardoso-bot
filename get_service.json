@@ -1,6 +1,0 @@
-{
-  "query": "query service($id: String!) { service(id: $id) { id name icon source { image repo } } }",
-  "variables": {
-    "id": "1ac0d3a6-8919-4489-bbf9-d59fcff2314d"
-  }
-}
