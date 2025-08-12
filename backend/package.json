@@ -1,6 +1,6 @@
 {
   "name": "telegram-bot-saas-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Backend do SaaS TelegramBot Manager",
   "main": "src/server.ts",
   "scripts": {
