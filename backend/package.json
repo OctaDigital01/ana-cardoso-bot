@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "dev:simple": "node dev-server.js",
-    "build": "tsup src/server.ts --out-dir dist && npx prisma generate",
+    "build": "tsup src --out-dir dist && npx prisma generate",
     "start": "node dist/server.js",
     "start:simple": "node simple-server.js",
     "test": "jest",
