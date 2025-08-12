@@ -3,31 +3,53 @@ import { redis } from '@/config/redis'
 import { logger } from '@/utils/logger'
 import { config } from '@/config/environment'
 
-// Configuração base das filas
-const queueConfig = {
-  redis: {
-    port: 6379,
-    host: config.redisUrl.includes('localhost') ? 'localhost' : config.redisUrl.split('@')[1]?.split(':')[0],
-    password: config.redisUrl.includes('@') ? config.redisUrl.split(':')[2]?.split('@')[0] : undefined
-  },
-  defaultJobOptions: {
-    removeOnComplete: 20,
-    removeOnFail: 50,
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    },
-  },
-}
+// Configuração base das filas (só criada se Redis disponível)
+let queueConfig: any = null
+let queuesEnabled = false
 
-// Filas específicas
-export const emailQueue = new Queue('email processing', queueConfig)
-export const botQueue = new Queue('bot operations', queueConfig)
-export const webhookQueue = new Queue('webhook processing', queueConfig)
-export const paymentQueue = new Queue('payment processing', queueConfig)
-export const analyticsQueue = new Queue('analytics processing', queueConfig)
-export const notificationQueue = new Queue('notification processing', queueConfig)
+// Filas específicas (inicializadas condicionalmente)
+export let emailQueue: Queue | null = null
+export let botQueue: Queue | null = null
+export let webhookQueue: Queue | null = null
+export let paymentQueue: Queue | null = null
+export let analyticsQueue: Queue | null = null
+export let notificationQueue: Queue | null = null
+
+// Inicializar configuração das filas
+function initQueueConfig() {
+  if (!config.redisUrl || config.redisUrl === '') {
+    return null
+  }
+
+  queuesEnabled = true
+  
+  queueConfig = {
+    redis: {
+      port: 6379,
+      host: config.redisUrl.includes('localhost') ? 'localhost' : config.redisUrl.split('@')[1]?.split(':')[0],
+      password: config.redisUrl.includes('@') ? config.redisUrl.split(':')[2]?.split('@')[0] : undefined
+    },
+    defaultJobOptions: {
+      removeOnComplete: 20,
+      removeOnFail: 50,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+    },
+  }
+
+  // Criar filas apenas se Redis disponível
+  emailQueue = new Queue('email processing', queueConfig)
+  botQueue = new Queue('bot operations', queueConfig)
+  webhookQueue = new Queue('webhook processing', queueConfig)
+  paymentQueue = new Queue('payment processing', queueConfig)
+  analyticsQueue = new Queue('analytics processing', queueConfig)
+  notificationQueue = new Queue('notification processing', queueConfig)
+  
+  return queueConfig
+}
 
 // Tipos de jobs
 export interface EmailJob {
@@ -298,31 +320,33 @@ export class QueueManager {
 
 // Inicializar filas
 export async function initializeQueues() {
+  // Tentar inicializar configuração das filas
+  const config = initQueueConfig()
+  
+  if (!config) {
+    logger.info('📝 Filas desabilitadas - Redis não configurado')
+    return
+  }
+
   try {
     logger.info('Inicializando filas de processamento...')
     
+    const queues = [emailQueue, botQueue, webhookQueue, paymentQueue, analyticsQueue, notificationQueue].filter(Boolean)
+    
     // Testar conectividade
-    await Promise.all(queues.map(queue => queue.isReady()))
+    await Promise.all(queues.map(queue => queue!.isReady()))
+    
+    // Configurar processadores
+    setupProcessors()
+    setupEventListeners()
     
     logger.info('✅ Filas de processamento inicializadas com sucesso')
   } catch (error) {
-    logger.error('❌ Erro ao inicializar filas:', error)
-    logger.warn('⚠️ Servidor continuará sem filas de processamento')
+    logger.warn('❌ Filas não disponíveis - processamento será síncrono:', error instanceof Error ? error.message : 'erro desconhecido')
     
-    // Don't throw error in production to allow service to start
-    if (config.nodeEnv === 'production') {
-      logger.warn('🔄 Tentará reconectar com filas em background')
-      // Try to reconnect in background
-      setTimeout(async () => {
-        try {
-          await initializeQueues()
-        } catch (retryError) {
-          logger.error('❌ Falha na reconexão das filas:', retryError)
-        }
-      }, 15000) // Retry after 15 seconds
-    } else {
-      throw error
-    }
+    // Don't throw error, just continue without queues
+    logger.info('🏃 Servidor continuará com processamento síncrono')
+    queuesEnabled = false
   }
 }
 

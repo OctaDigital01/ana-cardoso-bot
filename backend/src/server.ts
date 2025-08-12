@@ -14,7 +14,7 @@ import { routes } from '@/api/routes'
 import { initializeDatabase, prisma } from '@/config/database'
 import { initializeRedis, redis } from '@/config/redis'
 import { setupWebSocket } from '@/services/websocket'
-import { initializeQueues } from '@/services/queue'
+import { initializeQueues } from '@/services/queue-mock'
 
 async function startServer() {
   try {

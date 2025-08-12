@@ -7,12 +7,14 @@ import { paymentRoutes } from './payments/payment.routes'
 import { analyticsRoutes } from './analytics/analytics.routes'
 import { webhookRoutes } from './webhooks/webhook.routes'
 import { userRoutes } from './users/user.routes'
+import healthRoutes from './health/health.routes'
 
 const router = Router()
 
 // Rotas públicas (sem autenticação)
 router.use('/auth', authRoutes)
 router.use('/webhooks', webhookRoutes)
+router.use('/', healthRoutes) // Health check endpoints
 
 // Rotas protegidas (com autenticação) - será implementado no próximo passo
 router.use('/users', userRoutes)

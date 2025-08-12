@@ -2,17 +2,28 @@ import Redis from 'ioredis'
 import { logger } from '@/utils/logger'
 import { config } from './environment'
 
-export let redis: Redis
+export let redis: Redis | null = null
+let redisAvailable = false
+
+// Cache em memória como fallback
+const memoryCache = new Map<string, { value: any, expiry?: number }>()
 
 export async function initializeRedis() {
+  // Se não tiver REDIS_URL, usar apenas cache em memória
+  if (!config.redisUrl || config.redisUrl === '') {
+    logger.info('📝 Redis não configurado - usando cache em memória')
+    redisAvailable = false
+    return
+  }
+
   try {
     redis = new Redis(config.redisUrl, {
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 2,
       lazyConnect: true,
-      connectTimeout: 10000,
-      commandTimeout: 5000,
+      connectTimeout: 5000,
+      commandTimeout: 3000,
       family: 4,
     })
 
@@ -23,18 +34,17 @@ export async function initializeRedis() {
 
     redis.on('ready', () => {
       logger.info('✅ Redis conectado e pronto')
+      redisAvailable = true
     })
 
     redis.on('error', (error) => {
-      logger.error('❌ Erro no Redis:', error)
+      logger.warn('❌ Redis indisponível:', error.message)
+      redisAvailable = false
     })
 
     redis.on('close', () => {
-      logger.warn('📴 Conexão Redis fechada')
-    })
-
-    redis.on('reconnecting', (time) => {
-      logger.info(`🔄 Reconectando ao Redis em ${time}ms...`)
+      logger.warn('📴 Conexão Redis fechada - usando cache em memória')
+      redisAvailable = false
     })
 
     // Conectar
@@ -42,26 +52,16 @@ export async function initializeRedis() {
     
     // Testar conexão
     await redis.ping()
-    logger.info('✅ Teste de conexão Redis bem-sucedido')
+    logger.info('✅ Redis funcionando')
+    redisAvailable = true
 
   } catch (error) {
-    logger.error('❌ Erro ao conectar com Redis:', error)
-    logger.warn('⚠️ Servidor continuará sem Redis')
+    logger.warn('❌ Redis não disponível - usando cache em memória:', error instanceof Error ? error.message : 'erro desconhecido')
+    redisAvailable = false
+    redis = null
     
-    // Don't throw error in production to allow service to start
-    if (config.nodeEnv === 'production') {
-      logger.warn('🔄 Tentará reconectar com Redis em background')
-      // Try to reconnect in background
-      setTimeout(async () => {
-        try {
-          await initializeRedis()
-        } catch (retryError) {
-          logger.error('❌ Falha na reconexão Redis:', retryError)
-        }
-      }, 10000) // Retry after 10 seconds
-    } else {
-      throw error
-    }
+    // Não parar o servidor, continuar com cache em memória
+    logger.info('🏃 Servidor continuará com cache em memória')
   }
 }
 
@@ -72,33 +72,57 @@ export async function closeRedis() {
   }
 }
 
-// Utilitários Redis
+// Utilitários Redis com fallback para memória
 export class RedisCache {
   static async get<T = any>(key: string): Promise<T | null> {
-    try {
-      const value = await redis.get(key)
-      return value ? JSON.parse(value) : null
-    } catch (error) {
-      logger.error(`Erro ao buscar cache ${key}:`, error)
+    // Tentar Redis primeiro
+    if (redisAvailable && redis) {
+      try {
+        const value = await redis.get(key)
+        return value ? JSON.parse(value) : null
+      } catch (error) {
+        logger.warn(`Redis falhou para get ${key}, usando memória`)
+        redisAvailable = false
+      }
+    }
+    
+    // Fallback para memória
+    const cached = memoryCache.get(key)
+    if (!cached) return null
+    
+    // Verificar expiração
+    if (cached.expiry && Date.now() > cached.expiry) {
+      memoryCache.delete(key)
       return null
     }
+    
+    return cached.value
   }
 
   static async set(key: string, value: any, ttlSeconds?: number): Promise<boolean> {
-    try {
-      const serialized = JSON.stringify(value)
-      
-      if (ttlSeconds) {
-        await redis.setex(key, ttlSeconds, serialized)
-      } else {
-        await redis.set(key, serialized)
+    // Tentar Redis primeiro
+    if (redisAvailable && redis) {
+      try {
+        const serialized = JSON.stringify(value)
+        
+        if (ttlSeconds) {
+          await redis.setex(key, ttlSeconds, serialized)
+        } else {
+          await redis.set(key, serialized)
+        }
+        
+        return true
+      } catch (error) {
+        logger.warn(`Redis falhou para set ${key}, usando memória`)
+        redisAvailable = false
       }
-      
-      return true
-    } catch (error) {
-      logger.error(`Erro ao definir cache ${key}:`, error)
-      return false
     }
+    
+    // Fallback para memória
+    const expiry = ttlSeconds ? Date.now() + (ttlSeconds * 1000) : undefined
+    memoryCache.set(key, { value, expiry })
+    
+    return true
   }
 
   static async del(key: string): Promise<boolean> {
