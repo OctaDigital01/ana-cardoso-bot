@@ -8,23 +8,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelo de usuário
+// Modelo de usuário - compatível com Supabase Auth
 model User {
-  id                    String   @id @default(cuid())
-  email                 String   @unique
-  password              String
+  id                    String    @id // Supabase UUID
+  email                 String    @unique
+  password              String?   // Optional for Supabase Auth
   name                  String
   avatar                String?
-  plan                  Plan     @default(FREE)
-  active                Boolean  @default(false)
-  emailVerified         Boolean  @default(false)
+  plan                  Plan      @default(FREE)
+  active                Boolean   @default(true)
+  emailVerified         DateTime? // Supabase timestamp
   emailVerificationToken String?
   passwordResetToken    String?
   passwordResetExpires  DateTime?
-  googleId              String?  @unique
+  googleId              String?   @unique
   provider              AuthProvider @default(LOCAL)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  lastSignInAt          DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Relacionamentos
   bots         Bot[]

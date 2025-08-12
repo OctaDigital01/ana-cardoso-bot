@@ -13,6 +13,7 @@ import { rateLimiter } from '@/middlewares/rateLimiter'
 import { routes } from '@/api/routes'
 import { initializeDatabase, prisma } from '@/config/database'
 import { initializeRedis, redis } from '@/config/redis'
+import { initializeSupabase } from '@/config/supabase'
 import { setupWebSocket } from '@/services/websocket'
 import { initializeQueues } from '@/services/queue-mock'
 
@@ -29,6 +30,12 @@ async function startServer() {
       await initializeRedis()
     } catch (error) {
       logger.error('Redis initialization failed, continuing without Redis:', error)
+    }
+    
+    try {
+      await initializeSupabase()
+    } catch (error) {
+      logger.error('Supabase initialization failed, continuing without Supabase SDK:', error)
     }
     
     try {
@@ -106,11 +113,12 @@ async function startServer() {
       })
     })
 
-    // Iniciar servidor
-    server.listen(config.port, () => {
+    // Iniciar servidor - bind to 0.0.0.0 for Docker/Railway compatibility
+    server.listen(config.port, '0.0.0.0', () => {
       logger.info(`🚀 Servidor iniciado na porta ${config.port}`)
       logger.info(`📊 Ambiente: ${config.nodeEnv}`)
       logger.info(`🌐 API: ${config.apiUrl}/api/v1`)
+      logger.info(`🔗 Listening on: 0.0.0.0:${config.port}`)
       
       if (config.nodeEnv === 'development') {
         logger.info(`📝 Health Check: ${config.apiUrl}/health`)

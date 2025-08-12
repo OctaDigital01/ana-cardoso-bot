@@ -53,6 +53,11 @@ const envSchema = z.object({
   // Monitoramento
   SENTRY_DSN: z.string().optional(),
 
+  // Supabase
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+
   // Features
   ENABLE_REGISTRATION: z.string().transform(Boolean).default('true'),
   ENABLE_EMAIL_VERIFICATION: z.string().transform(Boolean).default('false'),
@@ -139,6 +144,13 @@ export const config = {
   
   // Monitoramento
   sentryDsn: parseResult.data.SENTRY_DSN,
+  
+  // Supabase
+  supabase: {
+    url: parseResult.data.SUPABASE_URL,
+    anonKey: parseResult.data.SUPABASE_ANON_KEY,
+    serviceRoleKey: parseResult.data.SUPABASE_SERVICE_ROLE_KEY,
+  },
   
   // Features
   features: {
