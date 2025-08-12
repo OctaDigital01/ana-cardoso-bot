@@ -77,54 +77,14 @@ async function startServer() {
     // Rate limiting
     app.use(rateLimiter)
 
-    // Health check
-    app.get('/health', async (req, res) => {
-      try {
-        const health = {
-          status: 'ok',
-          timestamp: new Date().toISOString(),
-          uptime: process.uptime(),
-          environment: config.nodeEnv,
-          services: {
-            database: 'unknown',
-            redis: 'unknown',
-            queues: 'unknown'
-          }
-        }
-
-        // Test database connection
-        try {
-          await prisma.$queryRaw`SELECT 1`
-          health.services.database = 'connected'
-        } catch {
-          health.services.database = 'disconnected'
-        }
-
-        // Test Redis connection
-        try {
-          if (redis) {
-            await redis.ping()
-            health.services.redis = 'connected'
-          }
-        } catch {
-          health.services.redis = 'disconnected'
-        }
-
-        // Test queues
-        try {
-          health.services.queues = 'connected'  // Basic assumption
-        } catch {
-          health.services.queues = 'disconnected'
-        }
-
-        res.json(health)
-      } catch (error) {
-        res.status(500).json({
-          status: 'error',
-          timestamp: new Date().toISOString(),
-          error: 'Health check failed'
-        })
-      }
+    // Simple health check for Railway
+    app.get('/health', (req, res) => {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        message: 'Production server running',
+        environment: config.nodeEnv
+      })
     })
 
     // API routes

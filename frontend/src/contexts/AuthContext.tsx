@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const { user: userData, token: authToken } = await authAPI.login(email, password);
+      const { user: userData, accessToken: authToken } = await authAPI.login(email, password);
       
       setUser(userData);
       setToken(authToken);

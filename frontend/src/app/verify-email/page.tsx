@@ -13,6 +13,8 @@ function VerifyEmailContent() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (!searchParams) return;
+    
     const token = searchParams.get('token');
     
     if (!token) {

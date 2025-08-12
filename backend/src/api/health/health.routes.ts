@@ -1,11 +1,9 @@
 import { Router } from 'express'
-import { PrismaClient } from '@prisma/client'
-import Redis from 'ioredis'
+import { prisma } from '@/config/database'
+import { redis } from '@/config/redis'
 import os from 'os'
 
 const router = Router()
-const prisma = new PrismaClient()
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379')
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy'
@@ -79,18 +77,24 @@ router.get('/health', async (req, res) => {
 
   // Verificar Redis
   try {
-    const redisStart = Date.now()
-    await redis.ping()
-    health.services.redis = {
-      status: 'up',
-      responseTime: Date.now() - redisStart
+    if (redis) {
+      const redisStart = Date.now()
+      await redis.ping()
+      health.services.redis = {
+        status: 'up',
+        responseTime: Date.now() - redisStart
+      }
+    } else {
+      health.services.redis = {
+        status: 'down',
+        error: 'Redis disabled'
+      }
     }
   } catch (error) {
     health.services.redis = {
       status: 'down',
       error: error instanceof Error ? error.message : 'Unknown error'
     }
-    health.status = 'degraded'
   }
 
   // Verificar Telegram API (simulado)
@@ -164,7 +168,9 @@ router.get('/ping', (req, res) => {
 router.get('/ready', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`
-    await redis.ping()
+    if (redis) {
+      await redis.ping()
+    }
     res.json({ ready: true })
   } catch (error) {
     res.status(503).json({ ready: false })

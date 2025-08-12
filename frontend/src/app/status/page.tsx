@@ -78,6 +78,8 @@ export default function StatusPage() {
       const interval = setInterval(fetchHealth, 30000) // Atualiza a cada 30 segundos
       return () => clearInterval(interval)
     }
+    
+    return undefined
   }, [autoRefresh])
 
   const getStatusIcon = (status: string) => {

@@ -12,6 +12,8 @@ function AuthCallbackContent() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (!searchParams) return;
+    
     const token = searchParams.get('token');
     const refreshToken = searchParams.get('refresh');
     const error = searchParams.get('error');
